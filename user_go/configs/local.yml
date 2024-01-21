@@ -1,0 +1,5 @@
+env: "local"
+postgres_storage_uri: "."
+grpc:
+  port: 1238
+  timeout: 20s

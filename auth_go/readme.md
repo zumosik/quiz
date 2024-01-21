@@ -1,0 +1,1 @@
+This service is based on user service, and it only task is working with JWT tokens

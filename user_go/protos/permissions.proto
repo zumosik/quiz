@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "/permissions";
+
+package user;
+
+service Permissions {
+    rpc GetUserPermissions(GetUserPermissionsRequest) returns (UserPermissions);
+}
+
+message GetUserPermissionsRequest {
+  string token = 1;
+}
+
+message UserPermissions {
+  string permissions = 1;
+}
