@@ -1,5 +1,7 @@
 env: "local"
-postgres_storage_uri: "."
+postgres_storage_uri: "postgresql://user:secret@localhost:5432/postgres?sslmode=disable"
 grpc:
   port: 1238
   timeout: 20s
+token_secret: "fkfkfkfkfkfkfkfkfkfk"
+token_ttl: 24h

@@ -17,3 +17,7 @@ func (u *User) EncryptPassword() error {
 	u.EncPassword = hash
 	return nil
 }
+
+func (u *User) ComparePassword(password string) bool {
+	return bcrypt.CompareHashAndPassword(u.EncPassword, []byte(password)) == nil
+}

@@ -11,6 +11,10 @@ APP_PATH = ./cmd/main.go
 TEST_POSTGRES_PATH = ./internal/storage/postgres
 MIGRATION_PATH=./migrations/
 
+.DEFAULT_GOAL := all
+
+t: sql test
+
 all: build run
 
 sql: sql_down sql_up
