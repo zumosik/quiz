@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"cloud.google.com/go/storage"
 	firebase "firebase.google.com/go"
+	"github.com/google/uuid"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
@@ -15,6 +17,7 @@ import (
 type File struct {
 	ID   string
 	Name string
+	Data string
 }
 
 func main() {
@@ -40,44 +43,42 @@ func main() {
 		panic(err)
 	}
 
-	// f, err := os.Open("download.png")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer f.Close()
+	f, err := os.Open("download.png")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
 
-	// f1, err := os.Open("r.jpg")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer f1.Close()
+	f1, err := os.Open("r.jpg")
+	if err != nil {
+		panic(err)
+	}
+	defer f1.Close()
 
-	// ff := []*os.File{f, f1}
-	// var ids []string
+	ff := []*os.File{f, f1}
 
-	// time.Sleep(2 * time.Second)
+	time.Sleep(2 * time.Second)
 
-	// for i, file := range ff {
-	// 	fmt.Println(i)
+	for i, file := range ff {
+		fmt.Println(i)
 
-	// 	uid := uuid.New()
-	// 	id := uid.String()
-	// 	ids = append(ids, id)
+		uid := uuid.New()
+		id := uid.String()
 
-	// 	obj := bucket.Object(file.Name())
-	// 	w := obj.NewWriter(ctx)
-	// 	w.ObjectAttrs.Metadata = map[string]string{"firebaseStorageDownloadTokens": id}
-	// 	defer func(w *storage.Writer) {
-	// 		err := w.Close()
-	// 		if err != nil {
-	// 			panic(err)
-	// 		}
-	// 	}(w)
+		obj := bucket.Object(file.Name())
+		w := obj.NewWriter(ctx)
+		w.ObjectAttrs.Metadata = map[string]string{"id": id, "data": "lol"}
+		defer func(w *storage.Writer) {
+			err := w.Close()
+			if err != nil {
+				panic(err)
+			}
+		}(w)
 
-	// 	if _, err := io.Copy(w, file); err != nil {
-	// 		panic(err)
-	// 	}
-	// }
+		if _, err := io.Copy(w, file); err != nil {
+			panic(err)
+		}
+	}
 
 	var ids []string
 
@@ -116,7 +117,7 @@ func downloadFileByID(ctx context.Context, bucket *storage.BucketHandle, fileID 
 		}
 
 		// Check if metadata contains the file ID
-		if attrs.Metadata["firebaseStorageDownloadTokens"] == fileID {
+		if attrs.Metadata["id"] == fileID {
 			// Open the object
 			reader, err := bucket.Object(attrs.Name).NewReader(ctx)
 			if err != nil {
@@ -159,7 +160,8 @@ func listFiles(ctx context.Context, bucket *storage.BucketHandle) ([]File, error
 
 		// Append file information to the list
 		fileList = append(fileList, File{
-			ID:   attrs.Metadata["firebaseStorageDownloadTokens"],
+			ID:   attrs.Metadata["id"],
+			Data: attrs.Metadata["data"],
 			Name: attrs.Name,
 		})
 	}

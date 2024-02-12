@@ -2,6 +2,7 @@ package files
 
 import (
 	"context"
+	"files/internal/domain/models"
 	pb "files/pb/files"
 	"log/slog"
 )
@@ -13,6 +14,7 @@ type serverAPI struct {
 }
 
 type Storage interface {
+	UploadFile(ctx context.Context, f models.File) (models.File, error)
 }
 
 func (s *serverAPI) UploadFile(ctx context.Context, in *pb.UploadFileRequest) (*pb.UploadFileResponse, error) {
