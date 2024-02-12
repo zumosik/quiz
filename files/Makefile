@@ -1,3 +1,6 @@
+export FIREBASE_CFG_PATH=configs/firebase_opt.json
+export CFG_PATH=configs/local.yml
+
 GO = go
 GOBUILD = $(GO) build
 GORUN = $(GO) run
@@ -13,7 +16,7 @@ build:
 	$(GOBUILD) -o $(BINARY_NAME) $(APP_PATH)
 
 run:
-	$(BINARY_NAME) --config=$(CFG_PATH)
+	$(BINARY_NAME)
 
 proto: proto_files
 

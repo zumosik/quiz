@@ -12,11 +12,11 @@ import (
 
 type Config struct {
 	Env            string     `yaml:"env" env-default:"local"`
-	GRPC           GRPCConfig `yaml:"grpc"`
+	GRPC           GRPCConfig `yaml:"grpc" env-required:"true"`
+	StorageBucket  string     `yaml:"storage_bucket" env-required:"true"`
+	DatabaseURL    string     `yaml:"database_url" env-required:"true"`
 	StorageOptions option.ClientOption
 	StorageCfg     *firebase.Config
-	DatabaseURL    string `yaml:"database_url" env-required:"true"`
-	StorageBucket  string `yaml:"storage_bucket" env-required:"true"`
 }
 
 type GRPCConfig struct {
@@ -78,7 +78,7 @@ func fetchConfigPath() (string, string) {
 	if resFirebase == "" {
 		fmt.Printf("Getting Firebase cfg, path: %s \n", os.Getenv("FIREBASE_CFG_PATH"))
 
-		res = os.Getenv("FIREBASE_CFG_PATH")
+		resFirebase = os.Getenv("FIREBASE_CFG_PATH")
 	}
 
 	return res, resFirebase

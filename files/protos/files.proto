@@ -2,6 +2,8 @@ syntax = "proto3";
 
 option go_package = "/files";
 
+import "google/protobuf/timestamp.proto";
+
 package files;
 
 service Files {
@@ -14,7 +16,8 @@ service Files {
 message File {
   string id = 1;
   bytes content = 2;
-  string metadata = 3; // json
+  string name = 3;
+  google.protobuf.Timestamp created_at = 4;
 }
 
 message UploadFileRequest {

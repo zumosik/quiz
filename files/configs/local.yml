@@ -1,0 +1,6 @@
+env: "local"
+storage_bucket: "files-saver-2233.appspot.com"
+database_url: "gs://files-saver-2233.appspot.com"
+grpc:
+  port: 1239
+  timeout: 20s
