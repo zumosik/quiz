@@ -2,7 +2,9 @@ package files
 
 import (
 	"context"
+	"errors"
 	"files/internal/domain/models"
+	"files/internal/storage"
 	pb "files/pb/files"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -19,6 +21,7 @@ type serverAPI struct {
 
 type Storage interface {
 	UploadFile(ctx context.Context, f models.File) (models.File, error)
+	GetFileById(ctx context.Context, id string) (models.File, error)
 }
 
 func Register(grpcServer *grpc.Server, storage Storage, logger *slog.Logger) {
@@ -42,15 +45,29 @@ func (s *serverAPI) UploadFile(ctx context.Context, in *pb.UploadFileRequest) (*
 
 	file, err := s.storage.UploadFile(ctx, f)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, "incorrect request")
 	}
 
-	return &pb.UploadFileResponse{File: FileToPb(file)}, err
+	return &pb.UploadFileResponse{File: FileToPb(file)}, nil
 }
 
 func (s *serverAPI) GetFileById(ctx context.Context, in *pb.GetFileByIdRequest) (*pb.GetFileByIdResponse, error) {
-	//TODO implement me
-	panic("implement me")
+	const op = "internal/grpc/auth/server/GetFileById()"
+	log := s.l.With(slog.String("op", op))
+	if !validateGetFileById(in) {
+		log.Error("haven't passed validation")
+		return nil, status.Error(codes.InvalidArgument, "incorrect request")
+	}
+
+	file, err := s.storage.GetFileById(ctx, in.UserId)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, status.Error(codes.NotFound, "not found")
+		}
+		return nil, status.Error(codes.Internal, "incorrect request")
+	}
+
+	return &pb.GetFileByIdResponse{File: FileToPb(file)}, nil
 }
 
 func (s *serverAPI) GetFilesByName(ctx context.Context, in *pb.GetFilesByNameRequest) (*pb.GetFilesByNameResponse, error) {
@@ -71,6 +88,11 @@ func validateUploadFile(in *pb.UploadFileRequest) bool {
 
 	return true
 
+}
+
+// validateGetFileById returns true if all data is correct
+func validateGetFileById(in *pb.GetFileByIdRequest) bool {
+	return !(len(in.UserId) < 3 || len(in.Id) < 3)
 }
 
 func FileToPb(file models.File) *pb.File {
