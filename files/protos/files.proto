@@ -10,7 +10,7 @@ service Files {
  rpc UploadFile(UploadFileRequest) returns (UploadFileResponse);
   rpc GetFileById(GetFileByIdRequest) returns (GetFileByIdResponse);
    rpc GetFilesByName(GetFilesByNameRequest) returns (GetFilesByNameResponse);
-   rpc GetFilesByUser(GetFilesByUserRequest) returns (GetFilesByUserRequest);
+   rpc GetFilesByUser(GetFilesByUserRequest) returns (GetFilesByUserResponse);
 }
 
 message File {

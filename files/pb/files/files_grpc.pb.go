@@ -32,7 +32,7 @@ type FilesClient interface {
 	UploadFile(ctx context.Context, in *UploadFileRequest, opts ...grpc.CallOption) (*UploadFileResponse, error)
 	GetFileById(ctx context.Context, in *GetFileByIdRequest, opts ...grpc.CallOption) (*GetFileByIdResponse, error)
 	GetFilesByName(ctx context.Context, in *GetFilesByNameRequest, opts ...grpc.CallOption) (*GetFilesByNameResponse, error)
-	GetFilesByUser(ctx context.Context, in *GetFilesByUserRequest, opts ...grpc.CallOption) (*GetFilesByUserRequest, error)
+	GetFilesByUser(ctx context.Context, in *GetFilesByUserRequest, opts ...grpc.CallOption) (*GetFilesByUserResponse, error)
 }
 
 type filesClient struct {
@@ -70,8 +70,8 @@ func (c *filesClient) GetFilesByName(ctx context.Context, in *GetFilesByNameRequ
 	return out, nil
 }
 
-func (c *filesClient) GetFilesByUser(ctx context.Context, in *GetFilesByUserRequest, opts ...grpc.CallOption) (*GetFilesByUserRequest, error) {
-	out := new(GetFilesByUserRequest)
+func (c *filesClient) GetFilesByUser(ctx context.Context, in *GetFilesByUserRequest, opts ...grpc.CallOption) (*GetFilesByUserResponse, error) {
+	out := new(GetFilesByUserResponse)
 	err := c.cc.Invoke(ctx, Files_GetFilesByUser_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ type FilesServer interface {
 	UploadFile(context.Context, *UploadFileRequest) (*UploadFileResponse, error)
 	GetFileById(context.Context, *GetFileByIdRequest) (*GetFileByIdResponse, error)
 	GetFilesByName(context.Context, *GetFilesByNameRequest) (*GetFilesByNameResponse, error)
-	GetFilesByUser(context.Context, *GetFilesByUserRequest) (*GetFilesByUserRequest, error)
+	GetFilesByUser(context.Context, *GetFilesByUserRequest) (*GetFilesByUserResponse, error)
 	mustEmbedUnimplementedFilesServer()
 }
 
@@ -103,7 +103,7 @@ func (UnimplementedFilesServer) GetFileById(context.Context, *GetFileByIdRequest
 func (UnimplementedFilesServer) GetFilesByName(context.Context, *GetFilesByNameRequest) (*GetFilesByNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFilesByName not implemented")
 }
-func (UnimplementedFilesServer) GetFilesByUser(context.Context, *GetFilesByUserRequest) (*GetFilesByUserRequest, error) {
+func (UnimplementedFilesServer) GetFilesByUser(context.Context, *GetFilesByUserRequest) (*GetFilesByUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFilesByUser not implemented")
 }
 func (UnimplementedFilesServer) mustEmbedUnimplementedFilesServer() {}

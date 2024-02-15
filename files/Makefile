@@ -5,7 +5,7 @@ GO = go
 GOBUILD = $(GO) build
 GORUN = $(GO) run
 GOTEST=$(GO) test
-BINARY_NAME = app
+BINARY_NAME = app.exe
 APP_PATH = ./cmd/main.go
 
 .DEFAULT_GOAL := all

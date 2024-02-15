@@ -7,6 +7,7 @@ import (
 	"files/internal/domain/models"
 	storage2 "files/internal/storage"
 	"github.com/google/uuid"
+	"google.golang.org/api/iterator"
 	"io"
 	"time"
 )
@@ -88,4 +89,92 @@ func (s *Storage) GetFileById(ctx context.Context, id string) (models.File, erro
 		Bytes:     bytes,
 	}, nil
 
+}
+
+func (s *Storage) GetFilesByName(ctx context.Context, name string, limit int) ([]models.File, error) {
+	var files []models.File
+
+	it := s.bucket.Objects(ctx, nil)
+	for {
+
+		attrs, err := it.Next()
+		if err != nil {
+			if errors.Is(err, iterator.Done) {
+				break
+			}
+			return nil, err
+		}
+
+		reader, err := s.bucket.Object(attrs.Name).NewReader(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		bytes, err := io.ReadAll(reader)
+		if err != nil {
+			return nil, err
+		}
+
+		parsedTime, _ := time.Parse(time.RFC3339Nano, attrs.Metadata[NameMetadataName])
+
+		if attrs.Metadata[NameMetadataName] == name {
+			if len(files) >= limit {
+				return files, nil
+			}
+
+			files = append(files, models.File{
+				ID:        attrs.Name,
+				UserID:    attrs.Metadata[UserIDMetadataName],
+				Name:      attrs.Metadata[NameMetadataName],
+				CreatedAt: parsedTime,
+				Bytes:     bytes,
+			})
+		}
+	}
+
+	return nil, storage2.ErrNotFound
+}
+
+func (s *Storage) GetFilesByUser(ctx context.Context, userId string, limit int) ([]models.File, error) {
+	var files []models.File
+
+	it := s.bucket.Objects(ctx, nil)
+	for {
+
+		attrs, err := it.Next()
+		if err != nil {
+			if errors.Is(err, iterator.Done) {
+				break
+			}
+			return nil, err
+		}
+
+		reader, err := s.bucket.Object(attrs.Name).NewReader(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		bytes, err := io.ReadAll(reader)
+		if err != nil {
+			return nil, err
+		}
+
+		parsedTime, _ := time.Parse(time.RFC3339Nano, attrs.Metadata[NameMetadataName])
+
+		if attrs.Metadata[UserIDMetadataName] == userId {
+			if len(files) >= limit {
+				return files, nil
+			}
+
+			files = append(files, models.File{
+				ID:        attrs.Name,
+				UserID:    attrs.Metadata[UserIDMetadataName],
+				Name:      attrs.Metadata[NameMetadataName],
+				CreatedAt: parsedTime,
+				Bytes:     bytes,
+			})
+		}
+	}
+
+	return nil, storage2.ErrNotFound
 }
