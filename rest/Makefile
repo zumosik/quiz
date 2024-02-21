@@ -1,3 +1,5 @@
+.CONFIG_PATH=./configs/config.yml
+
 GO = go
 GOBUILD = $(GO) build
 GORUN = $(GO) run

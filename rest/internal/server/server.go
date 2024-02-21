@@ -33,7 +33,7 @@ func (s *Server) Run(addr string) error {
 	return http.ListenAndServe(addr, s.r)
 }
 
-func MustNew(l *slog.Logger, filesAddr, authAddr string) *Server {
+func MustNew(l *slog.Logger, filesAddr string, authAddr string, timeout time.Duration) *Server {
 	r := chi.NewRouter()
 
 	var srv *Server
@@ -57,6 +57,8 @@ func MustNew(l *slog.Logger, filesAddr, authAddr string) *Server {
 
 	srv.l = l
 	srv.r = r
+
+	srv.CtxTimeout = timeout
 
 	return srv
 }
@@ -82,7 +84,9 @@ func (s *Server) Login() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(context.Background(), s.CtxTimeout)
+		defer cancel()
+
 		var req request
 		json.NewDecoder(r.Body).Decode(&req)
 		err := validator.New().Struct(req)
