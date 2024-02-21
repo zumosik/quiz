@@ -1,0 +1,5 @@
+env: "local"
+addr: ":3333"
+services:
+  files: "localhost:1239"
+  users: "localhost:1238"

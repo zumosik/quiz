@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 	"rest_grpc/internal/config"
@@ -21,7 +20,6 @@ func main() {
 	log.Debug("config readed, log configured")
 	s := server.MustNew(log, cfg.Services.Files, cfg.Services.Users, cfg.Timeout)
 
-	log.Info(fmt.Sprintf("Running server on port %s", cfg.Addr))
 	err := s.Run(cfg.Addr)
 	if err != nil {
 		panic(err)

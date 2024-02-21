@@ -1,4 +1,4 @@
-.CONFIG_PATH=./configs/config.yml
+export CONFIG_PATH=./configs/config.yml
 
 GO = go
 GOBUILD = $(GO) build
@@ -16,5 +16,13 @@ build:
 
 run:
 	./$(BINARY_NAME)
+
+proto: proto_files proto_auth
+
+proto_files:
+	protoc --go_out=pb/ --go-grpc_out=pb/ protos/files.proto
+
+proto_auth:
+	protoc --go_out=pb/ --go-grpc_out=pb/ protos/auth.proto
 
 
