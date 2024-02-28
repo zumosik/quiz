@@ -18,10 +18,11 @@ import (
 	"github.com/go-playground/validator/v10"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
-	ctxTokenKey = "ctx_token_key"
+	ctxTokenKey = iota
 )
 
 type Server struct {
@@ -79,10 +80,38 @@ func (s *Server) configureRouter(r *chi.Mux) {
 		r.Post("/register", s.Register())
 	})
 
-	r.Route("files", func(r chi.Router) {
-		r.Use(middleware.AllowContentType("application/json"))
+	r.Route("/files", func(r chi.Router) {
+		r.Use(middleware.AllowContentType("application/json", "text/plain", "multipart/form-data"))
 
+		r.Post("/upload", s.Upload())
 	})
+}
+
+func (s *Server) Upload() http.HandlerFunc {
+	type request struct {
+	}
+
+	type response struct {
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(context.Background(), s.CtxTimeout)
+		defer cancel()
+
+		// getting id from middleware
+		userID := r.Context().Value(ctxTokenKey).(string)
+
+		s.fCl.UploadFile(ctx, &files.UploadFileRequest{
+			UserId: userID,
+			File: &files.File{
+				Id:        "",
+				Content:   []byte{},
+				Name:      "",
+				CreatedAt: timestamppb.Now(),
+			},
+		})
+
+	}
 }
 
 func (s *Server) Login() http.HandlerFunc {
