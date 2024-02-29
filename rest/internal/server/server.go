@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -22,7 +23,13 @@ import (
 )
 
 const (
-	ctxTokenKey = iota
+	maxMBSize = 100 // 100 mb
+)
+
+type contextType int
+
+const (
+	ctxTokenKey contextType = iota
 )
 
 type Server struct {
@@ -81,36 +88,132 @@ func (s *Server) configureRouter(r *chi.Mux) {
 	})
 
 	r.Route("/files", func(r chi.Router) {
-		r.Use(middleware.AllowContentType("application/json", "text/plain", "multipart/form-data"))
+		r.Use(middleware.AllowContentType("multipart/form-data", "application/json"))
 
 		r.Post("/upload", s.Upload())
 	})
 }
 
 func (s *Server) Upload() http.HandlerFunc {
+	const requestMultipartFormFileName = "file"
+
 	type request struct {
+		Name      string `json:"name" validate:"required"`
+		CreatedAt string `json:"created_at" validate:"required"` // RFC3339
 	}
 
 	type response struct {
+		Response
+		ID string `json:"id"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), s.CtxTimeout)
 		defer cancel()
 
+		err := r.ParseMultipartForm(maxMBSize << 20) // 10 MB max file size
+		if err != nil {
+			render.JSON(w, r, response{
+				Response: Response{
+					StatusCode: 400,
+					Ok:         "",
+					Error:      "cant get multipart form",
+				},
+			})
+
+			w.WriteHeader(400)
+		}
+
+		file, _, err := r.FormFile(requestMultipartFormFileName)
+		if err != nil {
+
+			render.JSON(w, r, response{
+				Response: Response{
+					StatusCode: 400,
+					Ok:         "",
+					Error:      "cant get your file",
+				},
+			})
+
+			w.WriteHeader(400)
+		}
+		defer file.Close()
+
+		bytes, err := io.ReadAll(file)
+		if err != nil {
+
+			render.JSON(w, r, response{
+				Response: Response{
+					StatusCode: 500,
+					Ok:         "",
+					Error:      "cant read file",
+				},
+			})
+
+			w.WriteHeader(500) // idk if this 500 or 400
+		}
+
+		var req request
+		json.NewDecoder(r.Body).Decode(&req)
+		err = validator.New().Struct(req)
+		if err != nil {
+			render.JSON(w, r, response{
+				Response: Response{
+					StatusCode: 400,
+					Ok:         "",
+					Error:      "invalid data",
+				},
+			})
+
+			w.WriteHeader(400)
+		}
+
 		// getting id from middleware
 		userID := r.Context().Value(ctxTokenKey).(string)
 
-		s.fCl.UploadFile(ctx, &files.UploadFileRequest{
+		t, err := time.Parse(req.CreatedAt, time.RFC3339)
+		if err != nil {
+			render.JSON(w, r, response{
+				Response: Response{
+					StatusCode: 400,
+					Ok:         "",
+					Error:      "you must pass created_at field in RFC3339 format",
+				},
+			})
+
+			w.WriteHeader(400)
+		}
+
+		res, err := s.fCl.UploadFile(ctx, &files.UploadFileRequest{
 			UserId: userID,
 			File: &files.File{
-				Id:        "",
-				Content:   []byte{},
-				Name:      "",
-				CreatedAt: timestamppb.Now(),
+				Content:   bytes,
+				Name:      req.Name,
+				CreatedAt: timestamppb.New(t),
 			},
 		})
 
+		if err != nil {
+			render.JSON(w, r, response{
+				Response: Response{
+					StatusCode: 500,
+					Ok:         "",
+					Error:      "internal error",
+				},
+			})
+
+			w.WriteHeader(500)
+		}
+
+		render.JSON(w, r, response{
+			Response: Response{
+				StatusCode: 200,
+				Ok:         "ok",
+			},
+			ID: res.GetFile().GetId(),
+		})
+
+		w.WriteHeader(200)
 	}
 }
 
