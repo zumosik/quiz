@@ -94,6 +94,73 @@ func (s *Server) configureRouter(r *chi.Mux) {
 	})
 }
 
+func (s *Server) GetFileBy() http.HandlerFunc {
+	type request struct {
+		ID     string `json:"id"`
+		Name   string `json:"name"`
+		UserID string `json:"user_id"`
+	}
+
+	type response struct {
+		Response
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		// var b bytes.Buffer
+		// mw := multipart.NewWriter(&b)
+
+		ctx, cancel := context.WithTimeout(context.Background(), s.CtxTimeout)
+		defer cancel()
+
+		var req request
+		json.NewDecoder(r.Body).Decode(&req)
+		err := validator.New().Struct(req)
+		if err != nil {
+			render.JSON(w, r, response{
+				Response: Response{
+					StatusCode: 400,
+					Ok:         "",
+					Error:      "invalid data",
+				},
+			})
+
+			w.WriteHeader(400)
+		}
+
+		if req.ID != "" && req.Name == "" && req.UserID != "" {
+			res, err := s.fCl.GetFileById(ctx, &files.GetFileByIdRequest{
+				UserId: req.UserID,
+				Id:     req.ID,
+			})
+			if err != nil {
+				render.JSON(w, r, response{
+					Response: Response{
+						StatusCode: 500,
+						Error:      "internal error",
+					},
+				})
+
+				w.WriteHeader(500)
+				return
+			}
+		} else if req.Name != "" && req.ID == "" && req.UserID == "" {
+			// s.fCl.GetFilesByName()
+		} else if req.UserID != "" && req.Name == "" && req.ID == "" {
+			// s.fCl.GetFilesByUser()
+		} else { // all vals are empty
+			render.JSON(w, r, response{
+				Response: Response{
+					StatusCode: 400,
+					Ok:         "",
+					Error:      "you need to pass name or id or user",
+				},
+			})
+
+			w.WriteHeader(400)
+		}
+	}
+}
+
 func (s *Server) Upload() http.HandlerFunc {
 	const requestMultipartFormFileName = "file"
 
